@@ -32,7 +32,17 @@ Don't left click any buttons while the animation is running.  You can exit the a
 
 If you’re not familiar with Java Swing, Oracle has an excellent tutorial to get you started, [Creating a GUI With JFC/Swing](https://docs.oracle.com/javase/tutorial/uiswing/index.html). Skip the Netbeans section.
 
-The application consists of seven classes, two model classes, a JFrame class, a drawing JPanel, a controller class to update the integer array, a controller class to start the sort animation, and a controller class to increment each step of the bubble sort.
+When I write a Swing application, I use the [model / view controller](https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller) (MVC) pattern.  This pattern allows me to separate my concerns and focus on one part of the application at a time.  Actually, I tried to skip the model when I originally wrote this application, and an abend bit me, so I went back and reworked the code to include a model.
+
+When I say I follow the MVC pattern with Swing, this is what I mean.
+
+- The view reads the model.
+- The view may not update the model.
+- The controller updates the model and repaints / revalidates the view.
+
+In Swing, there's usually not one controller class to "rule them all".  Each controller does its part and controlls what it needs to control.
+
+The bubble sort animation application consists of seven classes, two model classes, a JFrame class, a drawing JPanel, a controller class to update the integer array, a controller class to start the sort animation, and a controller class to increment each step of the bubble sort.
 
 I didn't write this code all at once.  I wrote a little, tested a lot.  Most of the code is standard Swing, except for the controller that increments each step of the bubble sort.  I knew what I had to do and it still took the most time to code and test.
 
