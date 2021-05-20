@@ -28,14 +28,15 @@ public class BubbleSortAnimation implements Runnable {
 		SwingUtilities.invokeLater(new BubbleSortAnimation());
 	}
 	
-	private int[] array;
+	private ColorDigits colorDigits;
 	
 	private DrawingPanel drawingPanel;
 	
 	private JTextField integerArrayField;
 	
 	public BubbleSortAnimation() {
-		this.array = new int[] { 8, 5, 26, 4, 9, 3, 2, 7, 1 };
+		int[] array = { 8, 5, 26, 4, 9, 3, 2, 7, 1 };
+		this.colorDigits = new ColorDigits(array);
 	}
 
 	@Override
@@ -43,7 +44,7 @@ public class BubbleSortAnimation implements Runnable {
 		JFrame frame = new JFrame("Bubble Sort Animation");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		drawingPanel = new DrawingPanel(this);
+		drawingPanel = new DrawingPanel(colorDigits);
 		frame.add(createEntryPanel(), BorderLayout.BEFORE_FIRST_LINE);
 		frame.add(drawingPanel, BorderLayout.CENTER);
 		frame.add(createButtonPanel(), BorderLayout.AFTER_LAST_LINE);
@@ -64,7 +65,7 @@ public class BubbleSortAnimation implements Runnable {
 		panel.add(integerArrayField);
 		
 		JButton button = new JButton("Submit");
-		button.addActionListener(new ArrayListener(this));
+		button.addActionListener(new ArrayListener(this, colorDigits));
 		panel.add(button);
 		
 		return panel;
@@ -75,18 +76,10 @@ public class BubbleSortAnimation implements Runnable {
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		
 		JButton button = new JButton("Sort Integers");
-		button.addActionListener(new SortButtonListener(this));
+		button.addActionListener(new SortButtonListener(this, colorDigits));
 		panel.add(button);
 		
 		return panel;
-	}
-	
-	public int[] getArray() {
-		return array;
-	}
-
-	public void setArray(int[] array) {
-		this.array = array;
 	}
 
 	public JTextField getIntegerArrayField() {
@@ -96,10 +89,6 @@ public class BubbleSortAnimation implements Runnable {
 	public void repaint() {
 		drawingPanel.repaint();
 	}
-	
-	public void setColorArray(Color[] colorArray) {
-		drawingPanel.setColorArray(colorArray);
-	}
 
 	public class DrawingPanel extends JPanel {
 		
@@ -108,70 +97,65 @@ public class BubbleSortAnimation implements Runnable {
 		private int blockWidth;
 		private int margin;
 		
-		private BubbleSortAnimation frame;
-		
-		private Color[] colorArray;
+		private final ColorDigits model;
 
-		public DrawingPanel(BubbleSortAnimation frame) {
-			this.frame = frame;
+		public DrawingPanel(ColorDigits model) {
+			this.model = model;
+			
 			this.blockWidth = 96;
 			this.margin = 20;
-			this.colorArray = new Color[array.length];
-			for (int index = 0; index < array.length; index++) {
-				colorArray[index] = Color.WHITE;
-			}
 			
-			int width = array.length * blockWidth +  2 * margin;
+			int width = model.getColorDigits().length * blockWidth +  2 * margin;
 			int height = blockWidth + 2 * margin;
 			this.setBackground(Color.WHITE);
 			this.setPreferredSize(new Dimension(width, height));
-		}
-		
-		public void setColorArray(Color[] colorArray) {
-			this.colorArray = colorArray;
 		}
 
 		@Override
 		protected void paintComponent(Graphics g) {
 			super.paintComponent(g);
 			
-			int[] array = frame.getArray();
+			ColorDigit[] colorDigits = model.getColorDigits();
 			int x = margin;
 			int y = margin;
 			
-			for (int index = 0; index < array.length; index++) {
-				paintDigit(g, array[index], colorArray[index], x, y);
+			for (int index = 0; index < colorDigits.length; index++) {
+				paintDigit(g, colorDigits[index].getDigit(), 
+						colorDigits[index].getColor(), x, y);
 				x += blockWidth;
 			}
 		}
 		
 		private void paintDigit(Graphics g, int digit, Color color, int x, int y) {
 			String text = Integer.toString(digit);
-			
+
 			g.setColor(color);
 			g.fillRect(x, y, blockWidth, blockWidth);
-			
+
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.setStroke(new BasicStroke(5f));
 			g2d.setColor(Color.BLACK);
 			g2d.drawRect(x, y, blockWidth, blockWidth);
-			
+
 			Font font = getFont().deriveFont(Font.BOLD, 54f);
 			g2d.setFont(font);
 			FontMetrics fm = g2d.getFontMetrics();
 			Rectangle2D r = fm.getStringBounds(text, g2d);
 			int a = (blockWidth - (int) r.getWidth()) / 2 + x;
-	        int b = (blockWidth - (int) r.getHeight()) / 2 + fm.getAscent() + y;
-	        g2d.drawString(text, a, b);
+			int b = (blockWidth - (int) r.getHeight()) / 2 + fm.getAscent() + y;
+			g2d.drawString(text, a, b);
 		}
 	}
 	
 	public class ArrayListener implements ActionListener {
 		
-		private BubbleSortAnimation frame;
+		private final BubbleSortAnimation frame;
+		
+		private final ColorDigits model;
 
-		public ArrayListener(BubbleSortAnimation frame) {
+		public ArrayListener(BubbleSortAnimation frame, ColorDigits model) {
 			this.frame = frame;
+			this.model = model;
 		}
 
 		@Override
@@ -188,35 +172,37 @@ public class BubbleSortAnimation implements Runnable {
 				}
 			}
 			
+			model.setColorDigits(createColorDigitArray(array, Color.WHITE));
 			frame.getIntegerArrayField().setText("");
-			frame.setColorArray(createColorArray(Color.WHITE));
-			frame.setArray(array);
 			frame.repaint();
 		}
 		
-		private Color[] createColorArray(Color color) {
-			Color[] colorArray = new Color[array.length];
+		private ColorDigit[] createColorDigitArray(int[] array, Color color) {
+			ColorDigit[] colorDigitArray = new ColorDigit[array.length];
 			
 			for (int index = 0; index < array.length; index++) {
-				colorArray[index] = color;
+				colorDigitArray[index] = new ColorDigit(array[index], color);
 			}
 			
-			return colorArray;
+			return colorDigitArray;
 		}
 		
 	}
 	
 	public class SortButtonListener implements ActionListener {
 		
-		private BubbleSortAnimation frame;
+		private final BubbleSortAnimation frame;
+		
+		private final ColorDigits model;
 
-		public SortButtonListener(BubbleSortAnimation frame) {
+		public SortButtonListener(BubbleSortAnimation frame, ColorDigits model) {
 			this.frame = frame;
+			this.model = model;
 		}
 
 		@Override
 		public void actionPerformed(ActionEvent event) {
-			SortListener listener = new SortListener(frame);
+			SortListener listener = new SortListener(frame, model);
 			Timer timer = new Timer(2000, listener);
 			listener.setTimer(timer);
 			timer.setInitialDelay(0);
@@ -227,21 +213,22 @@ public class BubbleSortAnimation implements Runnable {
 	
 	public class SortListener implements ActionListener {
 		
-		private int[] array;
-		
 		private int currentIndex;
 		private int endIndex;
 		private int stage;
 		
-		private BubbleSortAnimation frame;
+		private final BubbleSortAnimation frame;
+		
+		private ColorDigit[] colorDigits;
 		
 		private Timer timer;
 
-		public SortListener(BubbleSortAnimation frame) {
+		public SortListener(BubbleSortAnimation frame, ColorDigits model) {
 			this.frame = frame;
-			this.array = frame.getArray();
+			
+			this.colorDigits = model.getColorDigits();
 			this.currentIndex = 0;
-			this.endIndex = array.length - 2;
+			this.endIndex = colorDigits.length - 2;
 			this.stage = 1;
 		}
 
@@ -251,11 +238,10 @@ public class BubbleSortAnimation implements Runnable {
 
 		@Override
 		public void actionPerformed(ActionEvent event) {
-			Color[] colorArray = createColorArray(Color.WHITE, Color.WHITE);
+			updateColorArray(Color.WHITE, Color.WHITE);
 			
 			if (endIndex < 0) {
-				colorArray = createColorArray(Color.GREEN, Color.GREEN);
-				frame.setColorArray(colorArray);
+				updateColorArray(Color.GREEN, Color.GREEN);
 				frame.repaint();
 				timer.stop();
 				return;
@@ -263,29 +249,29 @@ public class BubbleSortAnimation implements Runnable {
 			
 			switch (stage) {
 			case 1:
-				colorArray = createColorArray(Color.YELLOW, Color.WHITE);
-				if (array[currentIndex] > array[currentIndex + 1]) {
+				updateColorArray(Color.YELLOW, Color.WHITE);
+				int digit1 = colorDigits[currentIndex].getDigit();
+				int digit2 = colorDigits[currentIndex + 1].getDigit();
+				if (digit1 > digit2) {
 					stage = 2;
 				} else {
 					currentIndex++;
 				}
 				break;
 			case 2:
-				colorArray = createColorArray(Color.RED, Color.WHITE);
+				updateColorArray(Color.RED, Color.WHITE);
 				stage = 3;
 				break;
 			case 3:
-				int temp = array[currentIndex];
-				array[currentIndex] = array[currentIndex + 1];
-				array[currentIndex + 1] = temp;
+				ColorDigit temp = colorDigits[currentIndex].copy();
+				colorDigits[currentIndex] = colorDigits[currentIndex + 1].copy();
+				colorDigits[currentIndex + 1] = temp;
 				
-				frame.setArray(array);
 				stage = 1;
 				currentIndex++;
 				break;
 			}
 			
-			frame.setColorArray(colorArray);
 			frame.repaint();
 			
 			if (currentIndex > endIndex) {
@@ -294,17 +280,64 @@ public class BubbleSortAnimation implements Runnable {
 			} 
 		}
 		
-		private Color[] createColorArray(Color color, Color baseColor) {
-			Color[] colorArray = new Color[array.length];
-			
-			for (int index = 0; index < array.length; index++) {
-				colorArray[index] = baseColor;
+		private void updateColorArray(Color color, Color baseColor) {
+			for (int index = 0; index < colorDigits.length; index++) {
+				colorDigits[index].setColor(baseColor);
 			}
 			
-			colorArray[currentIndex] = color;
-			colorArray[currentIndex + 1] = color;
+			colorDigits[currentIndex].setColor(color);
+			colorDigits[currentIndex + 1].setColor(color);
+		}
+		
+	}
+	
+	public class ColorDigits {
+		
+		private ColorDigit[] colorDigits;
+		
+		public ColorDigits(int[] array) {
+			this.colorDigits = new ColorDigit[array.length];
 			
-			return colorArray;
+			for (int index = 0; index < array.length; index++) {
+				colorDigits[index] = new ColorDigit(array[index], Color.WHITE);
+			}
+		}
+
+		public ColorDigit[] getColorDigits() {
+			return colorDigits;
+		}
+
+		public void setColorDigits(ColorDigit[] colorDigits) {
+			this.colorDigits = colorDigits;
+		}
+		
+	}
+	
+	public class ColorDigit {
+		
+		private final int digit;
+		
+		private Color color;
+
+		public ColorDigit(int digit, Color color) {
+			this.digit = digit;
+			this.color = color;
+		}
+		
+		public ColorDigit copy() {
+			return new ColorDigit(digit, color);
+		}
+
+		public int getDigit() {
+			return digit;
+		}
+
+		public Color getColor() {
+			return color;
+		}
+
+		public void setColor(Color color) {
+			this.color = color;
 		}
 		
 	}
